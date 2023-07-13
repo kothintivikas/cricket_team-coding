@@ -13,7 +13,7 @@ const initializeDBAndServer = async () => {
   try {
     db = await open({
       filename: dbPath,
-      driver: sqlite3.database,
+      driver: sqlite3.Database,
     });
     app.listen(3000, () => {
       console.log("Server Running at http://localhost:3000/");
@@ -76,7 +76,7 @@ app.post("/districts/", async (request, response) => {
     ${active},
     ${deaths});`;
   await db.run(newDistrict);
-  response.send("District SuccessFully Added");
+  response.send("District Successfully Added");
 });
 
 //Returns a district based on the district ID
@@ -120,13 +120,14 @@ app.put("/districts/:districtId/", async (request, response) => {
 
 app.get("/states/:stateId/stats/", async (request, response) => {
   const { stateId } = request.params;
-  const getStateReport = `SELET SUM(cases) AS totalCases,
+  const getStateReport = `SELECT SUM(cases) AS totalCases,
     SUM(cured) AS totalCured,
     SUM(active) AS totalActive,
     SUM(deaths) AS totalDeaths,
     FROM district
     WHERE state_id = ${stateId};`;
   const stateReport = await db.get(getStateReport);
+  const resultReport = convertStateObjectToResponseObject(stateReport);
   response.send(resultReport);
 });
 
@@ -136,6 +137,7 @@ app.get("/districts/:districtId/details/", async (request, response) => {
   const { districtId } = request.params;
   const stateDetails = `SELECT state_id FROM district 
     WHERE district_id = ${districtId};`;
+
   const stateName = await db.get(stateDetails);
 
   const getStateNameQuery = `SELECT state_name as sateName FROM state WHERE state_id = ${stateName.state_id};`;
